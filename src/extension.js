@@ -31,6 +31,11 @@ var GamesFolder = class
     			homeDirectory + '/.local/share/applications'
     		];
     	}
+    	const iconsDirectory = Gio.File.new_for_path(
+    	    '/.local/share/icons/hicolor/32x32/apps/'
+    	);
+    	if(!iconsDirectory.query_exists(null))
+    	    iconsDirectory.make_directory_with_parents(null);
     	this.foldersSettings.add(this.folderName);
     	this.gamesSettings.name = this.folderName;
     	this.gamesSettings.translate = this.gamesSettings.translate || true;
@@ -41,6 +46,7 @@ var GamesFolder = class
             this.applicationsDirectory.make_directory(null);
         this.controller = new Controller({
         	applicationsDirectory: this.applicationsDirectory,
+        	iconsDirectory: iconsDirectory,
         	gamesSettings: this.gamesSettings,
         	configurations: this.configurations
         });

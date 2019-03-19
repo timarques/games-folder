@@ -14,6 +14,7 @@ var Controller = class
         this.gamesSettings = data.gamesSettings;
         this.configurations = data.configurations;
         this.applicationsDirectory = data.applicationsDirectory;
+        this.iconsDirectory = data.iconsDirectory;
         this.monitors = [];
     }
     
@@ -55,7 +56,7 @@ var Controller = class
             	!modules.includes(moduleName)
             ) return null;
             const className = Utils.upFirstLetter(moduleName);
-            const module = new Me.imports.modules[moduleName][className]();
+            const module = new Me.imports.modules[moduleName][className](this.iconsDirectory);
             // FIXME: "isInstalled" method name is weird.
             if(module.isInstalled()) this.modules.push(module);
         }, ()=> {

@@ -54,6 +54,12 @@ class SteamApp extends Game
 		return this.game;
 	}
 	
+	updateIcon(icon)
+	{
+	    this.icon = icon;
+	    this.replaceShortcutContent();
+	}
+
 	loadData(callback)
 	{
 		// FIXME: Is this the better way to get game icons??
@@ -89,16 +95,21 @@ class SteamApp extends Game
 		this.game = descriptionArea.includes('Game');
 		try{
 		    Icon.initWithUri(iconUrl, icon => {
-		        const iconsFolder = homeDirectory + '/.local/share/icons/hicolor/32x32/apps/';
-		        const iconName = icon.file.get_basename().split('.')[0];
+		        log('GamesFolder: Icon downloaded');
+		        const iconsFolder = Gio.File.new_for_path(
+		            homeDirectory + '/.local/share/icons/hicolor/32x32/apps/'
+		        );
+		        if(!iconsFolder.query_exists(null)) iconsFolder.make_directory(null);
+		        const iconName = icon.file.get_basename();
 		        icon.convert();
 		        icon.file.move(
-		            Gio.File.new_for_path(iconsFolder + iconName),
+		            Gio.File.new_for_path(iconsFolder.get_child(iconName)),
 		            Gio.FileCopyFlags.OVERWRITE,
 		            null,
 		            null
 		        );
-		        this.icon = iconName;
+		        log('GamesFolder: Icon converted to png');
+		        this.updateIcon(iconName.split('.')[0]);
 		    });
 		}catch(error){
 		    log('GamesFolder: '+error);

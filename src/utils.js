@@ -85,7 +85,7 @@ var Utils = class
 	static downloadFile(uri, callback)
 	{
 	    const session = new Soup.SessionAsync();
-	    const [file] = Gio.File.new_tmp('games_folder_');
+	    const file = Gio.File.new_for_path('/tmp/' + uri.split('/').pop());
 	    const fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
 	    const request = Soup.Message.new('GET', uri);
 	    request.connect('got_headers', message => {

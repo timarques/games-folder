@@ -18,12 +18,12 @@ var Icon = class
     convert()
     {
         const path = this.file.get_path();
-        const newPath = fileName.split('.')[0] + '.png';
+        const newPath = path.split('.')[0] + '.png';
 		GLib.spawn_command_line_sync(
 			'convert ' + path + ' ' + newPath
 		);
 		this.file.delete(null);
-		this.file = Gio.file.new_for_path(newPath);
+		this.file = Gio.File.new_for_path(newPath);
     }
 
 };
