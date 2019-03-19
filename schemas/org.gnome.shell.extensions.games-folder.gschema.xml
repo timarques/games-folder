@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema path="/org/gnome/shell/extensions/games-folder/" id="org.gnome.shell.extensions.games-folder">
+        <key type="s" name="name">
+            <default>""</default>
+            <summary>Name of folder</summary>
+            <description></description>
+        </key>
+        <key type="as" name="directories">
+            <default>[ ]</default>
+            <summary>Directories to Index Applications</summary>
+            <description></description>
+        </key>
+        <key type="as" name="modules">
+            <default>[ ]</default>
+            <summary>Active Modules</summary>
+            <description></description>
+        </key>
+    </schema>
+</schemalist>

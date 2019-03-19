@@ -1,0 +1,9 @@
+{
+  "uuid": "games-folder@timarques.github.com",
+  "name": "Games Folder",
+  "description": "Create a folder that contains all games from Steam and Lutris.",
+  "url": "https://github.com/timarques/games-folder",
+  "shell-version": ["3.32"],
+  "settings-schema": "org.gnome.shell.extensions.games-folder",
+  "version": 1
+}
