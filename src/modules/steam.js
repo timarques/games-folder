@@ -34,7 +34,7 @@ class SteamApp extends Game
 				name: content.split('"name"')[1].split('"')[1]
 			});
 			app.command = type === 'flatpak' ?
-				    'flatpak run steam steam://rungameid/' + app.id :
+				    'flatpak run com.valvesoftware.Steam steam://rungameid/' + app.id :
 				    'steam steam://rungameid/' + app.id;
 			callback(app);
 		});
