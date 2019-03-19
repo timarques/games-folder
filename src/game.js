@@ -26,7 +26,6 @@ var Game = class
 				noDisplay: true
 			};
 			const entries = content.split('\n');
-			entries.splice(0, 3);
 			entries.forEach(entry => {
 				const entrySplit = entry.split('=');
 				switch(entrySplit[0]){
@@ -46,7 +45,6 @@ var Game = class
 						break;
 				}
 			});
-			data.icon = Gio.File.new_for_path(data.icon);
 			const game = new this(data);
 			game.replaceShortcutContent();
 			callback(game);

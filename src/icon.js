@@ -1,32 +1,29 @@
 const {GLib, Gio} = imports.gi;
+const Me = imports.misc.extensionUtils.getCurrentExtension();
+const {Utils} = Me.imports.utils;
 
 var Icon = class
 {
 
-	static create(uri, folder, name, overwrite = false)
-	{
-		const externalFile = Gio.File.new_for_uri(uri);
-		const [tmpFile] = Gio.File.new_tmp(null);
-		try{
-			externalFile.move(tmpFile, Gio.FileCopyFlags.OVERWRITE, null, null);
-		}catch(error){
-			if(error.toString().includes('Not Found')) return null;
-		}
-		const file = Gio.File.new_for_path(
-			folder + name + '.png'
+    constructor(file)
+    {
+        this.file = file;
+    }
+
+    static initWithUri(uri, callback)
+    {
+        Utils.downloadFile(uri, file => callback(new this(file)));
+    }
+
+    convert()
+    {
+        const path = this.file.get_path();
+        const newPath = fileName.split('.')[0] + '.png';
+		GLib.spawn_command_line_sync(
+			'convert ' + path + ' ' + newPath
 		);
-		if(file.query_exists(null) && overwrite === false)
-			throw new Error('Icon already exists');
-		if(externalFile.get_basename().includes('.png'))
-			return externalFile.move(file, Gio.FileCopyFlags.OVERWRITE, null, null);
-		try{
-			GLib.spawn_command_line_async(
-				'convert ' + tmpFile.get_path() + ' ' + file.get_path()
-			);
-		}catch(error){
-			throw new Error('Can\'t run Convert command.Check if you have ImageMagic package installed');
-		}
-		return file;
-	}
+		this.file.delete(null);
+		this.file = Gio.file.new_for_path(newPath);
+    }
 
 };

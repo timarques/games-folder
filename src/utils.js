@@ -75,15 +75,28 @@ var Utils = class
 				request.request_headers.append(key, data.headers[key]);
 			});
 		}
-		request.set_request(
-			data.contentType || 'text/html; charset=UTF-8', 
-			Soup.MemoryUse.COPY, null
-		);
 		session.queue_message(request, (session, message) => {
 			if(message.status_code !== 200)
 				return callback(null, message);
 			callback(request.response_body.data, message);
 		});
+	}
+
+	static downloadFile(uri, callback)
+	{
+	    const session = new Soup.SessionAsync();
+	    const [file] = Gio.File.new_tmp('games_folder_');
+	    const fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
+	    const request = Soup.Message.new('GET', uri);
+	    request.connect('got_headers', message => {
+            if(message.status_code !== 200) throw new Error('Not Found');
+        });
+        request.connect('got_chunk', (message, chunk) => {
+            fstream.write(chunk.get_data(), null);
+        });
+        session.queue_message(request, (session, message) => {
+            callback(file);
+        });
 	}
 
 	/*static sleep(time, callback)

@@ -88,16 +88,20 @@ class SteamApp extends Game
 		)[1].split('</h2>')[0];
 		this.game = descriptionArea.includes('Game');
 		try{
-			// FIXME: Icon Creation needs a change
-			Icon.create(
-				iconUrl, 
-				homeDirectory + '/.local/share/icons/hicolor/32x32/apps/',
-				this.id,
-				true
-			);
-			this.icon = this.id;
+		    Icon.initWithUri(iconUrl, icon => {
+		        const iconsFolder = homeDirectory + '/.local/share/icons/hicolor/32x32/apps/';
+		        const iconName = icon.file.get_basename().split('.')[0];
+		        icon.convert();
+		        icon.file.move(
+		            Gio.File.new_for_path(iconsFolder + iconName),
+		            Gio.FileCopyFlags.OVERWRITE,
+		            null,
+		            null
+		        );
+		        this.icon = iconName;
+		    });
 		}catch(error){
-			log('GamesFolder: '+error);
+		    log('GamesFolder: '+error);
 		}
 	}
 	
