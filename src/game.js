@@ -1,6 +1,7 @@
 const {Gio, GLib} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
+const {Icon} = Me.imports.icon;
 
 var Game = class
 {
@@ -21,7 +22,7 @@ var Game = class
 	{
 		Utils.getFileContent(file, content => {
 			const data = {
-				id: file.get_basename().replace('.desktop', ''),
+				id: file.get_basename().split('_')[1].replace('.desktop', ''),
 				shortcut: file,
 				noDisplay: true
 			};
@@ -51,6 +52,30 @@ var Game = class
 		});
 	}
 	
+	createIcon(directory, callback)
+	{
+	    log('GamesFolder: Creating icon game');
+	    if(!this.icon.includes('://')) return callback();
+	    try{
+            Icon.initWithUri(this.icon, icon => {
+	            log('GamesFolder: Icon downloaded');
+	            icon.convert();
+	            icon.file.move(
+	                directory.get_child(icon.file.get_basename()),
+	                Gio.FileCopyFlags.OVERWRITE,
+	                null,
+	                null
+	            );
+	            log('GamesFolder: Icon converted to png');
+	            this.icon = this.collection +'_'+this.id;
+	        });
+	    }catch(error){
+	        log('GamesFolder: '+error);
+	        this.icon = this.collection.toLowerCase();
+	        callback();
+	    }
+	}
+
 	isHidden()
 	{
 		return this.noDisplay;
@@ -71,7 +96,7 @@ var Game = class
 	createShortcut(directory)
 	{
 		log('GamesFolder: Creating shortcut file for game ' + this.id);
-		this.shortcut = directory.get_child(this.id + '.desktop');
+		this.shortcut = directory.get_child(this.collection +'_'+this.id + '.desktop');
 		if(!this.shortcut.query_exists(null))
         	this.shortcut.create(Gio.FileCreateFlags.NONE, null);
         this.replaceShortcutContent();

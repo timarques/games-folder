@@ -29,14 +29,17 @@ var Controller = class
         const currentGame = this.getGame(game.id);
         if(!currentGame){
         	log('GamesFolder: Adding new game ' + game.id);
-    		game.createShortcut(this.applicationsDirectory, success => {
-    			if(success === false) return null;
-    			this.games.push(game);
-				this.gamesSettings.addApp(
-					this.applicationsDirectory.get_basename() + '-' + 
-					game.shortcut.get_basename()
-				);
-    		});
+        	game.loadData(()=>{
+        	    game.createIcon(this.iconsDirectory, ()=> {
+            	    game.createShortcut(this.applicationsDirectory);
+        			this.games.push(game);
+			        this.gamesSettings.addApp(
+				        this.applicationsDirectory.get_basename() + '-' +
+				        game.shortcut.get_basename()
+			        );
+			        //update-mime-database $HOME/.local/share/mime
+			    });
+        	});
         }else if(currentGame.isHidden()) currentGame.show();
     }
     

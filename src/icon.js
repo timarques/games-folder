@@ -19,6 +19,7 @@ var Icon = class
     {
         const path = this.file.get_path();
         const newPath = path.split('.')[0] + '.png';
+        log('convert ' + path + ' ' + newPath);
 		GLib.spawn_command_line_sync(
 			'convert ' + path + ' ' + newPath
 		);

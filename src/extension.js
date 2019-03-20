@@ -32,7 +32,7 @@ var GamesFolder = class
     		];
     	}
     	const iconsDirectory = Gio.File.new_for_path(
-    	    '/.local/share/icons/hicolor/32x32/apps/'
+    	    homeDirectory + '/.local/share/icons/hicolor/32x32/apps/'
     	);
     	if(!iconsDirectory.query_exists(null))
     	    iconsDirectory.make_directory_with_parents(null);

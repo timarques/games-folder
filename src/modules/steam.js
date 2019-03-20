@@ -2,7 +2,6 @@ const {Gio, GLib, Soup} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
 const {Game} = Me.imports.game;
-const {Icon} = Me.imports.icon;
 const homeDirectory = GLib.get_home_dir();
 
 class SteamApp extends Game
@@ -40,29 +39,14 @@ class SteamApp extends Game
 		});
 	}
 	
-	createShortcut(directory, callback)
-	{
-		this.loadData(()=>{
-			if(!this.isGame()) callback(false);
-			super.createShortcut(directory);
-			callback(true);
-		});
-	}
-	
 	isGame()
 	{
 		return this.game;
 	}
-	
-	updateIcon(icon)
-	{
-	    this.icon = icon;
-	    this.replaceShortcutContent();
-	}
 
 	loadData(callback)
 	{
-		// FIXME: Is this the better way to get game icons??
+		// FIXME: Is this the better way to get game icon??
 		Utils.requestPage({
 			method: 'GET',
 			uri: 'https://store.steampowered.com/app/' + this.id + '/',
@@ -80,7 +64,7 @@ class SteamApp extends Game
 	_parseData(data)
 	{
 		// FIXME: Convert Splits to Regex Rules
-		const iconUrl = data.split(
+		this.icon = data.split(
 			'<div class="apphub_AppIcon"><img src="'
 		)[1].split('"><div class="overlay">')[0];
 		this.description = data.split(
@@ -93,27 +77,6 @@ class SteamApp extends Game
 			'<div id="game_area_description" class="game_area_description">'
 		)[1].split('</h2>')[0];
 		this.game = descriptionArea.includes('Game');
-		try{
-		    Icon.initWithUri(iconUrl, icon => {
-		        log('GamesFolder: Icon downloaded');
-		        const iconsFolder = Gio.File.new_for_path(
-		            homeDirectory + '/.local/share/icons/hicolor/32x32/apps/'
-		        );
-		        if(!iconsFolder.query_exists(null)) iconsFolder.make_directory(null);
-		        const iconName = icon.file.get_basename();
-		        icon.convert();
-		        icon.file.move(
-		            Gio.File.new_for_path(iconsFolder.get_child(iconName)),
-		            Gio.FileCopyFlags.OVERWRITE,
-		            null,
-		            null
-		        );
-		        log('GamesFolder: Icon converted to png');
-		        this.updateIcon(iconName.split('.')[0]);
-		    });
-		}catch(error){
-		    log('GamesFolder: '+error);
-		}
 	}
 	
 }
@@ -151,7 +114,6 @@ var Steam = class
 		    SteamApp.initWithFile(steamAppFile, this.type, callback);
 		}catch(error){
 		    log('GamesFolder: '+error);
-		    callback();
 		}
 	}
 
