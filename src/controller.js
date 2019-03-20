@@ -17,16 +17,17 @@ var Controller = class
         this.iconsDirectory = data.iconsDirectory;
         this.monitors = [];
     }
-    
+
     getGame(gameId)
     {
-    	this.games.find(game => game.id === gameId);
+    	return this.games.find(game => game.id === gameId);
     }
 
     addGame(game)
     {
         if(!game) return null;
         const currentGame = this.getGame(game.id);
+        log(currentGame);
         if(!currentGame){
         	log('GamesFolder: Adding new game ' + game.id);
         	game.loadData(()=>{

@@ -44,16 +44,15 @@ var Utils = class
 	static emptyFolder(folder, removeFolder, callback = null)
 	{
 		this.listFiles(folder, file => {
-			files.forEach(file => file.delete(null));
+			file.delete(null);
 		}, () => {
-			if(callback) callback();
 			if(removeFolder) folder.delete(null);
+			if(callback) callback();
 		});
 	}
 
 	static getFileContent(file, callback)
 	{
-		//if(!callback) file.load_contents(null);
 		file.load_contents_async(null, (object, result) => {
 			const [ok, content] = object.load_contents_finish(result);
 			if(!ok) return callback(null);
@@ -86,6 +85,7 @@ var Utils = class
 	{
 	    const session = new Soup.SessionAsync();
 	    const file = Gio.File.new_for_path('/tmp/' + uri.split('/').pop());
+	    if(!file.query_exists(null)) file.create(Gio.FileCreateFlags.NONE, null);
 	    const fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
 	    const request = Soup.Message.new('GET', uri);
 	    request.connect('got_headers', message => {

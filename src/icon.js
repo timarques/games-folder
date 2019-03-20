@@ -19,12 +19,14 @@ var Icon = class
     {
         const path = this.file.get_path();
         const newPath = path.split('.')[0] + '.png';
-        log('convert ' + path + ' ' + newPath);
-		GLib.spawn_command_line_sync(
+        const file = Gio.File.new_for_path(newPath);
+        if(file.query_exists(null)) file.delete(null);
+        const [response] = GLib.spawn_command_line_sync(
 			'convert ' + path + ' ' + newPath
 		);
+        if(!response) throw new Error('Some error happened while converting');
 		this.file.delete(null);
-		this.file = Gio.File.new_for_path(newPath);
+        this.file = file;
     }
 
 };

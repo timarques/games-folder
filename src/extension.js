@@ -64,10 +64,11 @@ var GamesFolder = class
     disable()
     {
         log('GamesFolder Disabled');
-        this.controller.games.forEach(game => games.desactive());
+        this.controller.games.forEach(game => game.removeShortcut());
         this.controller.removeMonitors();
         this.gamesSettings.reset('apps');
         this.foldersSettings.remove(this.folderName);
+        Utils.emptyFolder(this.applicationsDirectory, true);
     }
 
 }

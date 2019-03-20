@@ -1,4 +1,4 @@
-const {Gio, GLib} = imports.gi;
+const {Gio} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
 const {Icon} = Me.imports.icon;
@@ -59,21 +59,32 @@ var Game = class
 	    try{
             Icon.initWithUri(this.icon, icon => {
 	            log('GamesFolder: Icon downloaded');
+	            const iconName = this.collection.toLowerCase() +'_'+this.id;
 	            icon.convert();
 	            icon.file.move(
-	                directory.get_child(icon.file.get_basename()),
+	                directory.get_child(iconName + '.' + icon.file.get_basename().split('.')[1]),
 	                Gio.FileCopyFlags.OVERWRITE,
 	                null,
 	                null
 	            );
 	            log('GamesFolder: Icon converted to png');
-	            this.icon = this.collection +'_'+this.id;
+	            this.icon = iconName;
+	            callback();
 	        });
 	    }catch(error){
 	        log('GamesFolder: '+error);
 	        this.icon = this.collection.toLowerCase();
 	        callback();
 	    }
+	}
+
+	createShortcut(directory)
+	{
+		log('GamesFolder: Creating shortcut file for game ' + this.id);
+		this.shortcut = directory.get_child(this.collection.toLowerCase() +'_'+this.id + '.desktop');
+		if(!this.shortcut.query_exists(null))
+        	this.shortcut.create(Gio.FileCreateFlags.NONE, null);
+        this.replaceShortcutContent();
 	}
 
 	isHidden()
@@ -92,19 +103,11 @@ var Game = class
 		this.noDisplay = true;
 		this.replaceShortcutContent();
 	}
-
-	createShortcut(directory)
-	{
-		log('GamesFolder: Creating shortcut file for game ' + this.id);
-		this.shortcut = directory.get_child(this.collection +'_'+this.id + '.desktop');
-		if(!this.shortcut.query_exists(null))
-        	this.shortcut.create(Gio.FileCreateFlags.NONE, null);
-        this.replaceShortcutContent();
-	}
 	
 	removeShortcut()
 	{
-		if(this.shortcut) this.shortcut.delete(null);
+	    log('GamesFolder: Game '+ this.id +' remove shortcut');
+		this.shortcut.delete(null);
 	}
 	
 	replaceShortcutContent()
