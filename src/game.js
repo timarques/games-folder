@@ -1,4 +1,4 @@
-const {Gio} = imports.gi;
+const {Gio, GLib} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
 
@@ -101,6 +101,9 @@ NoDisplay='+this.hide.toString(),
             false,
             Gio.FileCreateFlags.NONE,
             null
+        );
+        GLib.spawn_command_line_sync(
+            'update-desktop-database -q '+ GLib.get_home_dir() +'/.local/share/applications'
         );
 	}
 
