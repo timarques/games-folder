@@ -99,6 +99,24 @@ var Utils = class
         });
 	}
 
+	static convertImage(file, format)
+	{
+        const path = file.get_path();
+        const newPath = path.split('.')[0] + '.' + format;
+        const newFile = Gio.File.new_for_path(newPath);
+        if(newFile.query_exists(null)) newFile.delete(null);
+        try{
+            const [response] = GLib.spawn_command_line_sync(
+			    'convert ' + path + ' ' + newPath
+		    );
+		}catch(error){
+		    throw new Error('Missing ImageMagick');
+		}
+        if(!response) throw new Error('Some error happened while converting');
+		file.delete(null);
+        return newFile;
+	}
+
 	/*static sleep(time, callback)
 	{
 		let timeout = Mainloop.timeout_add(time, () => {

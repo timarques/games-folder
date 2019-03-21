@@ -27,19 +27,16 @@ var Controller = class
     {
         if(!game) return null;
         const currentGame = this.getGame(game.id);
-        log(currentGame);
         if(!currentGame){
         	log('GamesFolder: Adding new game ' + game.id);
         	game.loadData(()=>{
-        	    game.createIcon(this.iconsDirectory, ()=> {
-            	    game.createShortcut(this.applicationsDirectory);
-        			this.games.push(game);
-			        this.gamesSettings.addApp(
-				        this.applicationsDirectory.get_basename() + '-' +
-				        game.shortcut.get_basename()
-			        );
-			        //update-mime-database $HOME/.local/share/mime
-			    });
+        	    game.createShortcut(this.applicationsDirectory);
+        	    if(game.createIcon) game.createIcon(this.iconsDirectory);
+    			this.games.push(game);
+		        this.gamesSettings.addApp(
+			        this.applicationsDirectory.get_basename() + '-' +
+			        game.shortcut.get_basename()
+		        );
         	});
         }else if(currentGame.isHidden()) currentGame.show();
     }
@@ -108,11 +105,17 @@ var Controller = class
     			const file = Gio.File.new_for_path(directory + '/' + shortcutPath);
     			if(file.query_exists(null)) shortcutFile = file;
     		});
-    		if(!shortcutFile && index === array.length - 1) return loadGames();
-			return Game.initWithShortcutFile(shortcutFile, game => {
-				this.games.push(game);
-				if(index === array.length - 1) loadGames();
-			});
+    		if(!shortcutFile) return this.gamesSettings.removeApp(app);
+    		try{
+			    return Game.initWithShortcutFile(shortcutFile, game => {
+				    this.games.push(game);
+				    if(index === array.length - 1) loadGames();
+			    });
+			}catch(error){
+			    log('GamesFolder: ' + error);
+			    this.gamesSettings.removeApp(app);
+			}
+			if(index === array.length - 1) loadGames();
     	});
     }
 

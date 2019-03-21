@@ -16,6 +16,7 @@ class SteamApp extends Game
 			collection: 'Steam'
 		});
 		this.game = false;
+		this.iconUri = null;
 	}
 	
 	static initWithFile(file, type, callback)
@@ -44,6 +45,28 @@ class SteamApp extends Game
 		return this.game;
 	}
 
+	createIcon(directory)
+	{
+	    if(!this.iconUri || !this.iconUri.includes('://')) return null;
+	    log('GamesFolder: Creating icon game');
+	    Utils.downloadFile(this.iconUri, file => {
+            try{
+                this.icon = 'gf_'+this.id;
+                const icon = Utils.convertImage(file, 'png');
+                icon.move(
+                    directory.get_child(this.icon + '.png'),
+                    Gio.FileCopyFlags.OVERWRITE,
+                    null,
+                    null
+                );
+                log('GamesFolder: Icon ' + this.icon + ' was created');
+                this.updateShortcut();
+            }catch(error){
+                log('GamesFolder: '+error);
+            }
+	    });
+	}
+
 	loadData(callback)
 	{
 		// FIXME: Is this the better way to get game icon??
@@ -64,7 +87,7 @@ class SteamApp extends Game
 	_parseData(data)
 	{
 		// FIXME: Convert Splits to Regex Rules
-		this.icon = data.split(
+		this.iconUri = data.split(
 			'<div class="apphub_AppIcon"><img src="'
 		)[1].split('"><div class="overlay">')[0];
 		this.description = data.split(
