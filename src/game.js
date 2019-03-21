@@ -56,26 +56,25 @@ var Game = class
 	{
 	    log('GamesFolder: Creating icon game');
 	    if(!this.icon.includes('://')) return callback();
-	    try{
-            Icon.initWithUri(this.icon, icon => {
-	            log('GamesFolder: Icon downloaded');
-	            const iconName = this.collection.toLowerCase() +'_'+this.id;
-	            icon.convert();
-	            icon.file.move(
-	                directory.get_child(iconName + '.' + icon.file.get_basename().split('.')[1]),
-	                Gio.FileCopyFlags.OVERWRITE,
-	                null,
-	                null
-	            );
-	            log('GamesFolder: Icon converted to png');
-	            this.icon = iconName;
-	            callback();
-	        });
-	    }catch(error){
-	        log('GamesFolder: '+error);
-	        this.icon = this.collection.toLowerCase();
-	        callback();
-	    }
+        Icon.initWithUri(this.icon, icon => {
+            log('GamesFolder: Icon downloaded');
+            try{
+                 const iconName = this.collection.toLowerCase() +'_'+this.id;
+                icon.convert();
+                icon.file.move(
+                    directory.get_child(iconName + '.' + icon.file.get_basename().split('.')[1]),
+                    Gio.FileCopyFlags.OVERWRITE,
+                    null,
+                    null
+                );
+                log('GamesFolder: Icon converted to png');
+                this.icon = iconName;
+            }catch(error){
+                log('GamesFolder: '+error);
+                this.icon = this.collection.toLowerCase();
+            }
+            callback();
+        });
 	}
 
 	createShortcut(directory)

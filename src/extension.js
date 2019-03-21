@@ -15,6 +15,7 @@ var GamesFolder = class
         this.configurations = new Configurations();
         this.controller = null;
         this.applicationsDirectory = null;
+        this.configurationsConnection = null;
         this.folderName = 'Games';
     }
 
@@ -53,11 +54,14 @@ var GamesFolder = class
         this.controller.injectModules(() => {
             this.controller.addMonitors();
             this.controller.synchronize();
-            this.configurations.connect("changed", (settings, key) => {
-                log('GamesFolder: Configurations has changed.'+key);
-                this.disable();
-                this.enable();
-            });
+            this.configurationsConnection = this.configurations.connect(
+                "changed",
+                (settings, key) => {
+                    log('GamesFolder: Configurations has changed.'+key);
+                    this.disable();
+                    this.enable();
+                }
+            );
         });
     }
 
@@ -69,6 +73,8 @@ var GamesFolder = class
         this.gamesSettings.reset('apps');
         this.foldersSettings.remove(this.folderName);
         Utils.emptyFolder(this.applicationsDirectory, true);
+        if(this.configurationsConnection)
+            this.configurations.disconnect(this.configurationsConnection);
     }
 
 }

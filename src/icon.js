@@ -21,9 +21,13 @@ var Icon = class
         const newPath = path.split('.')[0] + '.png';
         const file = Gio.File.new_for_path(newPath);
         if(file.query_exists(null)) file.delete(null);
-        const [response] = GLib.spawn_command_line_sync(
-			'convert ' + path + ' ' + newPath
-		);
+        try{
+            const [response] = GLib.spawn_command_line_sync(
+			    'convert ' + path + ' ' + newPath
+		    );
+		}catch(error){
+		    throw new Error('Missing ImageMagick');
+		}
         if(!response) throw new Error('Some error happened while converting');
 		this.file.delete(null);
         this.file = file;
