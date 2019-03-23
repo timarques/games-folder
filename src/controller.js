@@ -57,9 +57,12 @@ var Controller = class
             	!modules.includes(moduleName)
             ) return null;
             const className = Utils.upFirstLetter(moduleName);
-            const module = new Me.imports.modules[moduleName][className](this.iconsDirectory);
-            // FIXME: "isInstalled" method name is weird.
-            if(module.isInstalled()) this.modules.push(module);
+            try{
+                const module = new Me.imports.modules[moduleName][className](this.iconsDirectory);
+                this.modules.push(module);
+            }catch(error){
+                log('GamesFolder: ' + error);
+            }
         }, ()=> {
         	this.configurations.modules = this.modules.map(module => {
         		return module.constructor.name.toLowerCase()

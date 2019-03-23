@@ -4,6 +4,68 @@ const {Utils} = Me.imports.utils;
 const {Game} = Me.imports.game;
 const homeDirectory = GLib.get_home_dir();
 
+var VDF = {
+    parse: (text) => {
+        const lines = text.split("\n");
+        const object = {};
+        const stack = [object];
+        let expect_bracket = false;
+        let name = "";
+
+        const regexRule = new RegExp(
+            '^("((?:\\\\.|[^\\\\"])+)"|([a-z0-9\\-\\_]+))' +
+            '([ \t]*(' +
+            '"((?:\\\\.|[^\\\\"])*)(")?' +
+            '|([a-z0-9\\-\\_]+)' +
+            '))?'
+        );
+
+        lines.forEach((line, index) => {
+            line = line.trim();
+            if( line == "" || line[0] == '/') return null;
+            if( line[0] === "{" ) return expect_bracket = false;
+            if(expect_bracket)
+                throw new SyntaxError("VDF.parse: invalid syntax on line " + (index+1));
+            if( line[0] == "}" ) return stack.pop();
+            const match = regexRule.exec(line);
+            if(!match)
+                throw new SyntaxError("VDF.parse: invalid syntax on line " + (i+1));
+            const key = (match[2] !== undefined) ? match[2] : match[3];
+            const value = (match[6] !== undefined) ? match[6] : match[8];
+            if(value){
+                if(!match[7] && !match[8]) return line += "\n" + lines[++index];
+                return stack[stack.length-1][key] = value;
+            }
+            if(!stack[stack.length-1][key]) stack[stack.length-1][key] = {};
+            stack.push(stack[stack.length-1][key]);
+            expect_bracket = true;
+        });
+
+        if(stack.length !== 1) throw new SyntaxError("VDF.parse: open parentheses somewhere");
+
+        return object;
+    },
+
+    stringify: (object) => {
+        const dump = (object, level = 0) => {
+            const indent = "\t";
+            let lineIndent = "";
+            let string = "";
+
+            Array(level).fill(1).forEach(() => lineIndent += indent);
+
+            Object.keys(object).forEach(key => {
+                if(typeof object[key] !== "object")
+                    return string += `${lineIndent}"${key}" "${String(object[key])}"\n`;
+                const node = this._dump(object[key], level+1);
+                string += `${lineIndent}"${key}"${lineIndent}{\n${node}${lineIndent}}\n`;
+            });
+            return string;
+        }
+        return dump(object);
+    }
+}
+
 class SteamApp extends Game
 {
 	constructor(data)
@@ -26,16 +88,16 @@ class SteamApp extends Game
 			!file.get_basename().includes('appmanifest_')
 		) throw new Error('Isn\'t a valid SteamApp');
 		Utils.getFileContent(file, content => {
-			// FIXME: Replace Split with Regex Rule
-			// FIXME: Improve Regex Rule
-			// FIXME: Better way to get more data in Steam files
+			const appState = VDF.parse(content).AppState;
 			const app = new this({
-				id: file.get_basename().match('appmanifest_(.*?).acf')[1],
-				name: content.split('"name"')[1].split('"')[1]
+				id: appState.appid,
+				name: appState.name,
+				command: (
+				    type === 'flatpak' ?
+				    'flatpak run com.valvesoftware.Steam steam://rungameid/' + appState.id :
+				    'steam steam://rungameid/' + appState.id
+				)
 			});
-			app.command = type === 'flatpak' ?
-				    'flatpak run com.valvesoftware.Steam steam://rungameid/' + app.id :
-				    'steam steam://rungameid/' + app.id;
 			callback(app);
 		});
 	}
@@ -123,12 +185,8 @@ var Steam = class
 		        log('GamesFolder: '+key);
 		        break;
 	        }
-		};
-	}
-
-	isInstalled()
-	{
-		return this.directory ? true : false;
+		}
+		if(!this.directory) throw new Error('Steam isn\'t installed');
 	}
 	
 	find(steamAppFile, callback)
