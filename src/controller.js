@@ -26,10 +26,11 @@ var Controller = class
     addGame(game)
     {
         if(!game) return null;
+        log('GamesFolder: Show game ' + game.id);
         const currentGame = this.getGame(game.id);
         if(!currentGame){
         	log('GamesFolder: Adding new game ' + game.id);
-        	game.loadData(()=>{
+        	game.loadData(() => {
         	    game.createShortcut(this.applicationsDirectory);
         	    if(game.createIcon) game.createIcon(this.iconsDirectory);
     			this.games.push(game);
@@ -43,6 +44,7 @@ var Controller = class
     
     removeGame(game)
     {
+        log('GamesFolder: Hide game ' + game.id);
     	this.getGame(game.id).hide();
     }
 
@@ -58,7 +60,7 @@ var Controller = class
             ) return null;
             const className = Utils.upFirstLetter(moduleName);
             try{
-                const module = new Me.imports.modules[moduleName][className](this.iconsDirectory);
+                const module = new Me.imports.modules[moduleName][className]();
                 this.modules.push(module);
             }catch(error){
                 log('GamesFolder: ' + error);
@@ -77,10 +79,11 @@ var Controller = class
         this.modules.forEach(module => {
             const monitor = new DirectoryMonitor(module.directory);
             monitor.connect((file, eventType) => {
+                log('GamesFolder: files have been changed');
                 module.find(file, game => {
             		if(!game) return null;
-            		if(eventType === 2 || eventType === 10) this.addGame(game);
-                	else if(eventType === 3 || eventType === 9) this.removeGame(game);
+            		if(eventType === 2 || eventType === 10) this.removeGame(game);
+                	else if(eventType === 3 || eventType === 9) this.addGame(game);
             	});
             });
             this.monitors.push(monitor);

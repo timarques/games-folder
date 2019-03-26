@@ -14,7 +14,7 @@ var Game = class
 		this.name = data.name || '';
 		this.collection = data.collection || 'Standard';
 		this.shortcut = data.shortcut;
-		this.hide = data.hide || false;
+		this.noDisplay = data.noDisplay || false;
 		if(!this.id) throw new Error('Contructor needs id parameter.');
 	}
 
@@ -28,7 +28,7 @@ var Game = class
 			const data = {
 				id: file.get_basename().split('_')[1].replace('.desktop', ''),
 				shortcut: file,
-				hide: true
+				noDisplay: true
 			};
 			content.split('\n').forEach(entry => {
 				const entrySplit = entry.split('=');
@@ -55,18 +55,18 @@ var Game = class
 
 	isHidden()
 	{
-		return this.hide;
+		return this.noDisplay;
 	}
 
 	show()
 	{
-		this.hide = false;
+		this.noDisplay = false;
 		this.updateShortcut();
 	}
 
 	hide()
 	{
-		this.hide = true;
+		this.noDisplay = true;
 		this.updateShortcut();
 	}
 
@@ -87,6 +87,7 @@ var Game = class
 
 	updateShortcut()
 	{
+        if(!this.name || !this.command) return null;
 		this.shortcut.replace_contents(
 		    '\
 [Desktop Entry]\n\
@@ -96,7 +97,7 @@ Name='+this.name+'\n\
 Icon='+this.icon+'\n\
 Exec='+this.command+'\n\
 Categories=Game;'+this.collection+';\n\
-NoDisplay='+this.hide.toString(),
+NoDisplay='+this.noDisplay.toString(),
             null,
             false,
             Gio.FileCreateFlags.NONE,
