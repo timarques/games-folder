@@ -57,24 +57,22 @@ var GamesFolder = class
             this.configurationsConnection = this.configurations.connect(
                 "changed",
                 (settings, key) => {
-                    log('GamesFolder: Configurations has changed.'+key);
-                    this.disable();
-                    this.enable();
+                    log('GamesFolder: Configurations has changed '+key);
+                    this.disable(() => this.enable());
                 }
             );
         });
     }
 
-    disable()
+    disable(callback = null)
     {
         log('GamesFolder Disabled');
-        this.controller.games.forEach(game => game.removeShortcut());
         this.controller.removeMonitors();
         this.gamesSettings.reset('apps');
         this.foldersSettings.remove(this.folderName);
-        Utils.emptyFolder(this.applicationsDirectory, true);
         if(this.configurationsConnection)
             this.configurations.disconnect(this.configurationsConnection);
+        Utils.emptyFolder(this.applicationsDirectory, true, callback);
     }
 
 }

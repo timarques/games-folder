@@ -4,7 +4,7 @@ const {Utils} = Me.imports.utils;
 const {Game} = Me.imports.game;
 const homeDirectory = GLib.get_home_dir();
 
-var VDF = {
+const VDF = {
     parse: (text) => {
         const lines = text.split("\n");
         const object = {};
@@ -94,8 +94,8 @@ class SteamApp extends Game
 				name: appState.name,
 				command: (
 				    type === 'flatpak' ?
-				    'flatpak run com.valvesoftware.Steam steam://rungameid/' + appState.id :
-				    'steam steam://rungameid/' + appState.id
+				    'flatpak run com.valvesoftware.Steam steam://rungameid/' + appState.appid :
+				    'steam steam://rungameid/' + appState.appid
 				)
 			});
 			callback(app);
@@ -140,9 +140,10 @@ class SteamApp extends Game
 			}
 		}, (data, message) => {
 			if(!data || !message.get_uri().get_path().includes(this.id)){
-				log('GamesFolder: Can\'t reach steam store.');
-			} else this._parseData(data);
-			callback();
+				return log('GamesFolder: Can\'t reach steam store.');
+			}
+		    this._parseData(data);
+		    callback();
 		});
 	}
 	
@@ -172,7 +173,7 @@ var Steam = class
 	constructor()
 	{
 		const directories = {
-			native: homeDirectory + '/.local/share/Steam',
+			native: homeDirectory + '/.steam',
 			flatpak: homeDirectory + '/.var/app/com.valvesoftware.Steam/.local/share/Steam'
 		};
 		this.directory = null;
@@ -182,7 +183,6 @@ var Steam = class
 		    if(directory.query_exists(null)){
 		        this.directory = directory;
 		        this.type = key;
-		        log('GamesFolder: '+key);
 		        break;
 	        }
 		}
@@ -200,7 +200,7 @@ var Steam = class
 
 	findAll(callback)
 	{
-		Utils.listFiles(this.directory.get_child('steamapps'), file => {
+		Utils.listFiles(this.directory.get_child('steam/steamapps'), file => {
 			this.find(file, callback);
 		});
 	}
