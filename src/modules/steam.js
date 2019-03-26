@@ -17,6 +17,7 @@ class SteamApp extends Game
 		});
 		this.game = false;
 		this.iconUri = null;
+		this.file = data.file;
 	}
 	
 	static initWithFile(file, type)
@@ -28,17 +29,13 @@ class SteamApp extends Game
 		const id = file.get_basename().replace(/[^0-9]/g, '');
 		return new this({
 			id: id,
+			file: file,
 			command: (
 			    type === 'flatpak' ?
 			    'flatpak run com.valvesoftware.Steam steam://rungameid/' + id :
 			    'steam steam://rungameid/' + id
 			)
 		});
-	}
-	
-	isGame()
-	{
-		return this.game;
 	}
 
 	createIcon(directory)
@@ -66,7 +63,6 @@ class SteamApp extends Game
 
 	loadData(callback)
 	{
-		// FIXME: Is this the better way to get game icon??
 		Utils.requestPage({
 			method: 'GET',
 			uri: 'https://store.steampowered.com/app/' + this.id + '/',
@@ -78,7 +74,10 @@ class SteamApp extends Game
 				return log('GamesFolder: Can\'t reach steam store.');
 			}
 		    this._parseData(data);
-		    callback();
+		    Utils.getFileContent(this.file, content => {
+		        if(!this.game) return null;
+		        if(content.split('"StateFlags"')[1].split('"')[1] === '4') callback();
+		    });
 		});
 	}
 	
