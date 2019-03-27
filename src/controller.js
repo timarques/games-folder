@@ -15,6 +15,7 @@ var Controller = class
         this.configurations = data.configurations;
         this.applicationsDirectory = data.applicationsDirectory;
         this.iconsDirectory = data.iconsDirectory;
+        this.iconThemeDirectory = data.iconThemeDirectory;
         this.monitors = [];
     }
 
@@ -32,7 +33,9 @@ var Controller = class
         	log('GamesFolder: Adding new game ' + game.id);
         	game.loadData(() => {
         	    game.createShortcut(this.applicationsDirectory);
-        	    if(game.createIcon) game.createIcon(this.iconsDirectory);
+        	    if(game.createIcon) game.createIcon(
+        	        this.iconsDirectory, this.iconThemeDirectory
+        	    );
     			this.games.push(game);
 		        this.gamesSettings.addApp(
 			        this.applicationsDirectory.get_basename() + '-' +

@@ -2,7 +2,7 @@ const {GLib, Gio} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
 const {Controller} = Me.imports.controller;
-const {Games, Folders, Configurations} = Me.imports.settings;
+const {Games, Folders, Configurations, Interface} = Me.imports.settings;
 
 var GamesFolder = class
 {
@@ -13,6 +13,7 @@ var GamesFolder = class
         this.gamesSettings = new Games();
         this.foldersSettings = new Folders();
         this.configurations = new Configurations();
+        this.interface = new Interface();
         this.controller = null;
         this.applicationsDirectory = null;
         this.configurationsConnection = null;
@@ -45,11 +46,21 @@ var GamesFolder = class
     	);
         if(!this.applicationsDirectory.query_exists(null))
             this.applicationsDirectory.make_directory(null);
+        const iconTheme = this.interface.iconTheme;
+        const homeIconThemeDirectory = Gio.File.new_for_path(
+            homeDirectory + '/.local/share/icons/' + iconTheme
+        );
+        const globalIconThemeDirectory = Gio.File.new_for_path(
+            '/usr/share/icons/' + iconTheme
+        );
+        const iconThemeDirectory = homeIconThemeDirectory.query_exists(null) ?
+            homeIconThemeDirectory : globalIconThemeDirectory;
         this.controller = new Controller({
         	applicationsDirectory: this.applicationsDirectory,
         	iconsDirectory: iconsDirectory,
         	gamesSettings: this.gamesSettings,
-        	configurations: this.configurations
+        	configurations: this.configurations,
+        	iconThemeDirectory: iconThemeDirectory
         });
         this.controller.injectModules(() => {
             this.controller.addMonitors();

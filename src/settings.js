@@ -2,6 +2,23 @@ const {Gio, GLib, GObject} = imports.gi;
 const GioSSS = Gio.SettingsSchemaSource;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 
+var Interface = GObject.registerClass(
+    class InterfaceSettings extends Gio.Settings
+    {
+
+        _init()
+        {
+            super._init({schema_id: 'org.gnome.desktop.interface'});
+        }
+
+        get iconTheme()
+        {
+            return this.get_string('icon-theme');
+        }
+
+    }
+);
+
 var Games = GObject.registerClass(
 	class GamesSettings extends Gio.Settings
 	{
