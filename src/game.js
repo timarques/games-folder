@@ -70,6 +70,28 @@ var Game = class
 		this.updateShortcut();
 	}
 
+	createIcon(directory, themeDirectory, callback)
+	{
+	    const getIconTheme = (callback) => {
+	        let exists = false;
+	        Utils.listFiles(themeDirectory.get_child('apps'), file => {
+	            if(
+	                exists ||
+	                !GLib.file_test(file.get_path(), GLib.FileTest.IS_DIR) ||
+	                (
+	                    !file.get_child(this.icon + '.svg').query_exists(null) &&
+	                    !file.get_child(this.icon + '.png').query_exists(null)
+	                )
+	            ) return null;
+	            exists = true;
+	        }, () => exists ? callback(iconName) : callback(null));
+	    }
+	    getIconTheme(icon => {
+	        if(!icon) this.icon = this.collection.toLowerCase();
+	        if(callback) callback(icon);
+	    });
+	}
+
 	createShortcut(directory)
 	{
 		log('GamesFolder: Creating shortcut file for game ' + this.id);

@@ -32,15 +32,14 @@ var Controller = class
         if(!currentGame){
         	log('GamesFolder: Adding new game ' + game.id);
         	game.loadData(() => {
-        	    game.createShortcut(this.applicationsDirectory);
-        	    if(game.createIcon) game.createIcon(
-        	        this.iconsDirectory, this.iconThemeDirectory
-        	    );
-    			this.games.push(game);
-		        this.gamesSettings.addApp(
-			        this.applicationsDirectory.get_basename() + '-' +
-			        game.shortcut.get_basename()
-		        );
+        	    game.createIcon(this.iconsDirectory, this.iconThemeDirectory, () => {
+        	        game.createShortcut(this.applicationsDirectory);
+        	        this.games.push(game);
+		            this.gamesSettings.addApp(
+			            this.applicationsDirectory.get_basename() + '-' +
+			            game.shortcut.get_basename()
+		            );
+        	    });
         	});
         }else if(currentGame.isHidden()) currentGame.show();
     }

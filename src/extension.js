@@ -48,7 +48,7 @@ var GamesFolder = class
             this.applicationsDirectory.make_directory(null);
         const iconTheme = this.interface.iconTheme;
         const homeIconThemeDirectory = Gio.File.new_for_path(
-            homeDirectory + '/.local/share/icons/' + iconTheme
+            homeDirectory + '/.icons/' + iconTheme
         );
         const globalIconThemeDirectory = Gio.File.new_for_path(
             '/usr/share/icons/' + iconTheme

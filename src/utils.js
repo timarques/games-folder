@@ -106,13 +106,12 @@ var Utils = class
         const newFile = Gio.File.new_for_path(newPath);
         if(newFile.query_exists(null)) newFile.delete(null);
         try{
-            const [response] = GLib.spawn_command_line_sync(
+            GLib.spawn_command_line_sync(
 			    'convert ' + path + ' ' + newPath
 		    );
 		}catch(error){
 		    throw new Error('Missing ImageMagick');
 		}
-        if(!response) throw new Error('Some error happened while converting');
 		file.delete(null);
         return newFile;
 	}

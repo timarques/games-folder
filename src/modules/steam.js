@@ -11,7 +11,7 @@ class SteamApp extends Game
 		super({
 			id: data.id,
 			command: data.command,
-			icon: 'steam',
+			icon: 'steam_icon_' + data.id,
 			name: data.name,
 			collection: 'Steam'
 		});
@@ -38,20 +38,29 @@ class SteamApp extends Game
 		});
 	}
 
-	createIcon(directory, themeDirectory)
+	createIcon(directory, themeDirectory, callback)
 	{
-	    this._getIconTheme(themeDirectory, icon => {
-	        if(icon) {
-	            this.icon = icon;
-	            return this.updateShortcut();
-            }
-            this._generateIcon(directory, icon => {
-                if(icon) {
-                    this.icon = icon;
-                    this.updateShortcut();
+	    super.createIcon(directory, themeDirectory, icon => {
+            if(icon || !this.iconUri || !this.iconUri.includes('://')) return null;
+            log('GamesFolder: Creating icon game');
+            Utils.downloadFile(this.iconUri, file => {
+                try{
+                    const iconName = 'gf_'+this.id;
+                    const icon = Utils.convertImage(file, 'png');
+                    icon.move(
+                        directory.get_child(iconName + '.png'),
+                        Gio.FileCopyFlags.OVERWRITE,
+                        null,
+                        null
+                    );
+                    log('GamesFolder: Icon ' + this.icon + ' was created');
+                    this.icon = iconName;
+                    callback();
+                }catch(error){
+                    log('GamesFolder: '+error);
                 }
             });
-	    })
+	    });
 	}
 
 	loadData(callback)
@@ -90,45 +99,6 @@ class SteamApp extends Game
 			'<div id="game_area_description" class="game_area_description">'
 		)[1].split('</h2>')[0];
 		this.game = descriptionArea.includes('Game');
-	}
-	
-	_getIconTheme(directory, callback)
-	{
-	    const iconName = 'steam_icon_' + this.id;
-	    let exists = false;
-	    Utils.listFiles(directory.get_child('apps'), file => {
-	        if(
-	            exists ||
-	            !GLib.file_test(file.get_path(), GLib.FileTest.IS_DIR) ||
-	            (
-	                !file.get_child(iconName + '.svg').query_exists(null) &&
-	                !file.get_child(iconName + '.png').query_exists(null)
-	            )
-	        ) return null;
-	        exists = true;
-	    }, () => exists ? callback(iconName) : callback(null));
-	}
-
-	_generateIcon(directory, callback)
-	{
-	    if(!this.iconUri || !this.iconUri.includes('://')) return null;
-        log('GamesFolder: Creating icon game');
-        Utils.downloadFile(this.iconUri, file => {
-            try{
-                const iconName = 'gf_'+this.id;
-                const icon = Utils.convertImage(file, 'png');
-                icon.move(
-                    directory.get_child(this.icon + '.png'),
-                    Gio.FileCopyFlags.OVERWRITE,
-                    null,
-                    null
-                );
-                log('GamesFolder: Icon ' + this.icon + ' was created');
-                callback(iconName);
-            }catch(error){
-                log('GamesFolder: '+error);
-            }
-        });
 	}
 
 }
