@@ -6,16 +6,34 @@ const {Game} = Me.imports.game;
 class LutrisGame extends Game
 {
 
-    constructor(iterator)
+    constructor(config, connection)
     {
-        const id = iterator.get_value_for_field('id');
-        super({
-            id: id,
-            command: 'lutris lutris:rungameid/' + id,
-            name: iterator.get_value_for_field('name'),
-            collection: iterator.get_value_for_field('runner'),
-            hide: true
+        const slug = file.get_basename().split('-').splice(-1,1).join('-');
+        const sqlBuilder = new Gda.SqlBuilder({
+            stmt_type: Gda.SqlStatementType.SELECT
         });
+        const stmt = sqlBuilder.get_statement();
+        sqlBuilder.select_add_target('games', null);
+        sqlBuilder.select_add_field('name', null, null);
+        sqlBuilder.select_add_field('slug', null, null);
+        sqlBuilder.select_add_field('installer-slug', null, null);
+        sqlBuilder.select_add_field('runner', null, null);
+        sqlBuilder.set_where(
+             sqlBuilder.add_cond(
+                Gda.SqlOperatorType.EQ,
+                sqlBuilder.add_field_id("installer-slug", null),
+                SqlBuilder.add_expr_value(null, slug),
+                0
+            )
+        );
+        const data = connection.statement_execute_select(stmt, null);
+        log(data.dump_as_string());
+        /*super({
+            id: slug,
+            command: 'lutris lutris:rungameid/' + id,
+            collection: 'lutris_' +
+        });*/
+
     }
 
 }
@@ -25,6 +43,9 @@ var Lutris = class
 
     constructor()
     {
+        this.directory = Gio.File.new_for_path(
+            GLib.get_home_dir() + '/.local/share/lutris'
+        );
         this.connection = Gda.Connection.open_sqlite(
             GLib.get_home_dir() + '/.local/share/lutris',
             'pga.db',
@@ -33,24 +54,14 @@ var Lutris = class
         this.connection.connect();
     }
 
-    find(id)
+    find(gameConfig, callback)
     {
-        const results = this.connection.execute_select_command(
-            'SELECT id, runner, steamid FROM games LIMIT 1'
-        );
+        callback(new LutrisGame(gameConfig, this.connection));
     }
 
-    findAll()
+    findAll(callback)
     {
-        log('GamesFolder: Lutris FindAll method');
-        const results = this.connection.execute_select_command(
-            'SELECT id, runner, steamid FROM games'
-        );
-        const iterator = results.create_iter();
-        while(iterator.move_next()){
-            log(iterator.get_value_for_field('id'));
-            if(iterator.get_value_for_field('steamid')) continue;
-        }
+        Utils.listFiles(this.directory, file => this.find(file, callback));
     }
 
 }

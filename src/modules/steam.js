@@ -6,36 +6,26 @@ const homeDirectory = GLib.get_home_dir();
 
 class SteamApp extends Game
 {
-	constructor(data)
-	{
-		super({
-			id: data.id,
-			command: data.command,
-			icon: 'steam_icon_' + data.id,
-			name: data.name,
-			collection: 'Steam'
-		});
-		this.game = false;
-		this.iconUri = null;
-		this.file = data.file;
-	}
-	
-	static initWithFile(file, type)
+	constructor(file, type)
 	{
 	    if(
 			GLib.file_test(file.get_path(), GLib.FileTest.IS_DIR) ||
 			!file.get_basename().includes('appmanifest_')
 		) throw new Error('Isn\'t a valid SteamApp');
-		const id = file.get_basename().replace(/[^0-9]/g, '');
-		return new this({
+        const id = file.get_basename().replace(/[^0-9]/g, '');
+		super({
 			id: id,
-			file: file,
+			icon: 'steam_icon_' + id,
+			collection: 'Steam',
 			command: (
 			    type === 'flatpak' ?
 			    'flatpak run com.valvesoftware.Steam steam://rungameid/' + id :
 			    'steam steam://rungameid/' + id
 			)
 		});
+		this.game = false;
+		this.iconUri = null;
+		this.file = file;
 	}
 
 	createIcon(directory, themeDirectory, callback)
@@ -75,30 +65,25 @@ class SteamApp extends Game
 			if(!data || !message.get_uri().get_path().includes(this.id)){
 				return log('GamesFolder: Can\'t reach steam store.');
 			}
-		    this._parseData(data);
+		    // FIXME: Convert Splits to Regex Rules
+		    this.iconUri = data.split(
+			    '<div class="apphub_AppIcon"><img src="'
+		    )[1].split('"><div class="overlay">')[0];
+		    this.description = data.split(
+			    '<div class="game_description_snippet">'
+		    )[1].split('</div>')[0].trim();
+		    this.name = data.split(
+			    '<div class="apphub_AppName">'
+		    )[1].split('</div>')[0];
+		    const descriptionArea = data.split(
+			    '<div id="game_area_description" class="game_area_description">'
+		    )[1].split('</h2>')[0];
+		    this.game = descriptionArea.includes('Game');
+		    if(!this.game) return null;
 		    Utils.getFileContent(this.file, content => {
-		        if(!this.game) return null;
 		        if(content.split('"StateFlags"')[1].split('"')[1] === '4') callback();
 		    });
 		});
-	}
-	
-	_parseData(data)
-	{
-		// FIXME: Convert Splits to Regex Rules
-		this.iconUri = data.split(
-			'<div class="apphub_AppIcon"><img src="'
-		)[1].split('"><div class="overlay">')[0];
-		this.description = data.split(
-			'<div class="game_description_snippet">'
-		)[1].split('</div>')[0].trim();
-		this.name = data.split(
-			'<div class="apphub_AppName">'
-		)[1].split('</div>')[0];
-		const descriptionArea = data.split(
-			'<div id="game_area_description" class="game_area_description">'
-		)[1].split('</h2>')[0];
-		this.game = descriptionArea.includes('Game');
 	}
 
 }
@@ -128,7 +113,7 @@ var Steam = class
 	find(steamAppFile, callback)
 	{
 	    try{
-		    callback(SteamApp.initWithFile(steamAppFile, this.type));
+		    callback(new SteamApp(steamAppFile, this.type));
 		}catch(error){
 		    log('GamesFolder: '+error);
 		}
@@ -136,9 +121,7 @@ var Steam = class
 
 	findAll(callback)
 	{
-		Utils.listFiles(this.directory, file => {
-			this.find(file, callback);
-		});
+		Utils.listFiles(this.directory, file => this.find(file, callback));
 	}
 
 }
