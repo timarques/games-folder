@@ -1,4 +1,4 @@
-const {Gda, GLib} = imports.gi;
+const {GLib, Gio} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
 const {Game} = Me.imports.game;
@@ -6,35 +6,62 @@ const {Game} = Me.imports.game;
 class LutrisGame extends Game
 {
 
-    constructor(config, connection)
+    constructor(configFile, connection)
     {
-        const slug = file.get_basename().split('-').splice(-1,1).join('-');
-        const sqlBuilder = new Gda.SqlBuilder({
-            stmt_type: Gda.SqlStatementType.SELECT
-        });
-        const stmt = sqlBuilder.get_statement();
-        sqlBuilder.select_add_target('games', null);
-        sqlBuilder.select_add_field('name', null, null);
-        sqlBuilder.select_add_field('slug', null, null);
-        sqlBuilder.select_add_field('installer-slug', null, null);
-        sqlBuilder.select_add_field('runner', null, null);
-        sqlBuilder.set_where(
-             sqlBuilder.add_cond(
-                Gda.SqlOperatorType.EQ,
-                sqlBuilder.add_field_id("installer-slug", null),
-                SqlBuilder.add_expr_value(null, slug),
-                0
-            )
+        const configFileNameSplit = configFile.get_basename().split('-');
+        configFileNameSplit.pop();
+        const installerSlug = configFileNameSplit.join('-');
+        const results = connection.execute_select_command(
+            `SELECT id, name, slug FROM games WHERE installer_slug = "${installerSlug}";`
         );
-        const data = connection.statement_execute_select(stmt, null);
-        log(data.dump_as_string());
-        /*super({
-            id: slug,
+        if(results.get_n_rows() === 0) throw new Error(installerSlug + ' isn\'t a valid game');
+        const id = results.get_value_at(0, 0);
+        const slug = results.get_value_at(2, 0);
+        super({
+            id: id,
             command: 'lutris lutris:rungameid/' + id,
-            collection: 'lutris_' +
-        });*/
-
+            icon: 'lutris_' + slug,
+            collection: 'lutris',
+            name: results.get_value_at(1, 0)
+        });
+        this.iconUri = null;
+        this.slug = slug;
     }
+
+    loadData(callback)
+    {
+        Utils.requestPage({
+            method: 'GET',
+            uri: 'https://lutris.net/api/games/' + this.slug
+        }, data => {
+            data = JSON.parse(data);
+            this.iconUri = 'https://lutris.net' + data.icon_url;
+            callback();
+        });
+    }
+
+    createIcon(data, callback)
+	{
+	    super.createIcon(data, icon => {
+            if(
+                data.useThemeIcon ||
+                icon ||
+                !this.iconUri || 
+                !this.iconUri.includes('://')
+            ) return callback();
+            Utils.downloadFile(this.iconUri, file => {
+                const iconName = 'gf_' + this.collection + '_' + this.id;
+                file.move(
+                    data.directories[5].get_child(iconName + '.png'),
+                    Gio.FileCopyFlags.OVERWRITE,
+                    null,
+                    null
+                );
+                this.icon = iconName;
+                callback();
+            });
+	    });
+	}
 
 }
 
@@ -44,24 +71,34 @@ var Lutris = class
     constructor()
     {
         this.directory = Gio.File.new_for_path(
-            GLib.get_home_dir() + '/.local/share/lutris'
+            GLib.get_user_config_dir() + '/lutris/games'
         );
-        this.connection = Gda.Connection.open_sqlite(
-            GLib.get_home_dir() + '/.local/share/lutris',
-            'pga.db',
-            false
-        );
-        this.connection.connect();
+        if(!this.directory.query_exists(null)) throw new Error('Lutris isn\'t installed');
+        let Gda = null;
+        try{
+            Gda = imports.gi.Gda; 
+        }catch(error){
+            throw new Error('Missing Gda lib');
+        }
+        this.connection = new Gda.Connection ({
+            provider: Gda.Config.get_provider('SQLite'),
+            cnc_string: `DB_DIR=${GLib.get_user_data_dir()}/lutris;DB_NAME=pga.db`
+        });
+        this.connection.open();
     }
 
-    find(gameConfig, callback)
+    find(gameConfig)
     {
-        callback(new LutrisGame(gameConfig, this.connection));
+        try{
+            return new LutrisGame(gameConfig, this.connection);
+        }catch(error){
+            log('GamesFolder: ' + error);
+        }
     }
 
     findAll(callback)
     {
-        Utils.listFiles(this.directory, file => this.find(file, callback));
+        Utils.listFiles(this.directory, file => callback(this.find(file)));
     }
 
 }

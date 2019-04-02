@@ -26,7 +26,7 @@ var Game = class
 	    );
 		Utils.getFileContent(file, content => {
 			const data = {
-				id: file.get_basename().split('_')[1].replace('.desktop', ''),
+				id: file.get_basename().split('_')[2].replace('.desktop', ''),
 				shortcut: file,
 				noDisplay: true
 			};
@@ -45,7 +45,7 @@ var Game = class
 						break;
 					case 'Categories':
 						const categories = entrySplit[1].split(';');
-						data.collection = categories[categories.length - 2];
+						data.collection = categories[categories.length - 2].toLowerCase();
 						break;
 				}
 			});
@@ -70,11 +70,11 @@ var Game = class
 		this.updateShortcut();
 	}
 
-	createIcon(directory, themeDirectory, callback)
+	createIcon(data, callback)
 	{
 	    const getIconTheme = (callback) => {
 	        let exists = false;
-	        Utils.listFiles(themeDirectory.get_child('apps'), file => {
+	        Utils.listFiles(data.themeDirectory.get_child('apps'), file => {
 	            if(
 	                exists ||
 	                !GLib.file_test(file.get_path(), GLib.FileTest.IS_DIR) ||
@@ -87,7 +87,7 @@ var Game = class
 	        }, () => exists ? callback(iconName) : callback(null));
 	    }
 	    getIconTheme(icon => {
-	        if(!icon) this.icon = this.collection.toLowerCase();
+	        if(!icon) this.icon = this.collection;
 	        if(callback) callback(icon);
 	    });
 	}
@@ -95,7 +95,9 @@ var Game = class
 	createShortcut(directory)
 	{
 		log('GamesFolder: Creating shortcut file for game ' + this.id);
-		this.shortcut = directory.get_child('gf_'+this.id + '.desktop');
+		this.shortcut = directory.get_child(
+		    'gf_'+ this.collection + '_' + this.id + '.desktop'
+		);
 		if(!this.shortcut.query_exists(null))
         	this.shortcut.create(Gio.FileCreateFlags.NONE, null);
         this.updateShortcut();
@@ -118,15 +120,12 @@ Comment='+this.description+'\n\
 Name='+this.name+'\n\
 Icon='+this.icon+'\n\
 Exec='+this.command+'\n\
-Categories=Game;'+this.collection+';\n\
+Categories=Game;'+Utils.upFirstLetter(this.collection)+';\n\
 NoDisplay='+this.noDisplay.toString(),
             null,
             false,
             Gio.FileCreateFlags.NONE,
             null
-        );
-        GLib.spawn_command_line_sync(
-            'update-desktop-database -q '+ GLib.get_home_dir() +'/.local/share/applications'
         );
 	}
 

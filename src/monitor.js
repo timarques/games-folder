@@ -1,12 +1,12 @@
 const {Gio} = imports.gi;
 
-var DirectoryMonitor = class
+var Monitor = class
 {
 
-    constructor(directory)
+    constructor(file, type)
     {
         this.cancellable = Gio.Cancellable.new();
-        this.monitor = directory.monitor_directory(
+        this.monitor = file['monitor_'+type](
         	Gio.FileMonitorFlags.WATCH_MOVES, this.cancellable
         );
     }

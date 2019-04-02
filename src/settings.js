@@ -182,6 +182,11 @@ var Configurations = GObject.registerClass(
 		{
 			return this.get_strv('modules');
 		}
+
+		get useThemeIcons()
+		{
+			return this.get_boolean('use-theme-icons');
+		}
 		
 		set name(name)
 		{
@@ -196,6 +201,11 @@ var Configurations = GObject.registerClass(
 		set modules(modules)
 		{
 			this.set_strv('modules', modules);
+		}
+
+		set useThemeIcons(useThemeIcons)
+		{
+			this.set_boolean('use-theme-icons', useThemeIcons);
 		}
 
 	}

@@ -16,5 +16,10 @@
             <summary>Active Modules</summary>
             <description></description>
         </key>
+        <key type="b" name="use-theme-icons">
+            <default>false</default>
+            <summary>Use theme icons</summary>
+            <description></description>
+        </key>
     </schema>
 </schemalist>

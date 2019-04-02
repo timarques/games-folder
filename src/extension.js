@@ -24,31 +24,34 @@ var GamesFolder = class
     {
     	log('GamesFolder Enabled');
     	const name = this.configurations.name;
-    	const homeDirectory = GLib.get_home_dir();
-    	this.folderName = name !== '' ? name : this.folderName;
+    	const dataDirectory = GLib.get_user_data_dir();
+        this.folderName = name !== '' ? name : this.folderName;
+        this.configurations.useThemeIcons = this.configurations.useThemeIcons;
     	this.configurations.name = this.folderName;
     	if(this.configurations.directories.length === 0){
     		this.configurations.directories = [
     			'/usr/share/applications',
-    			homeDirectory + '/.local/share/applications'
+    			dataDirectory + '/applications'
     		];
     	}
-    	const iconsDirectory = Gio.File.new_for_path(
-    	    homeDirectory + '/.local/share/icons/hicolor/32x32/apps/'
-    	);
-    	if(!iconsDirectory.query_exists(null))
-    	    iconsDirectory.make_directory_with_parents(null);
+    	const iconsDirectories = [16, 24, 32, 48, 64, 128].map(size => {
+    	    const directory = Gio.File.new_for_path(
+        	    dataDirectory + '/icons/hicolor/' + size + 'x'+ size +'/apps'
+        	);
+        	if(!directory.query_exists(null)) directory.make_directory_with_parents(null);
+        	return directory;
+    	});
     	this.foldersSettings.add(this.folderName);
     	this.gamesSettings.name = this.folderName;
     	this.gamesSettings.translate = this.gamesSettings.translate || true;
     	this.applicationsDirectory = Gio.File.new_for_path(
-    		homeDirectory + '/.local/share/applications/' + this.folderName.toLowerCase()
+    		dataDirectory + '/applications/' + this.folderName.toLowerCase()
     	);
         if(!this.applicationsDirectory.query_exists(null))
             this.applicationsDirectory.make_directory(null);
         const iconTheme = this.interface.iconTheme;
         const homeIconThemeDirectory = Gio.File.new_for_path(
-            homeDirectory + '/.icons/' + iconTheme
+            GLib.get_home_dir() + '/.icons/' + iconTheme
         );
         const globalIconThemeDirectory = Gio.File.new_for_path(
             '/usr/share/icons/' + iconTheme
@@ -57,7 +60,7 @@ var GamesFolder = class
             homeIconThemeDirectory : globalIconThemeDirectory;
         this.controller = new Controller({
         	applicationsDirectory: this.applicationsDirectory,
-        	iconsDirectory: iconsDirectory,
+        	iconsDirectories: iconsDirectories,
         	gamesSettings: this.gamesSettings,
         	configurations: this.configurations,
         	iconThemeDirectory: iconThemeDirectory

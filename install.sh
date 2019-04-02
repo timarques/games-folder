@@ -7,6 +7,6 @@ if [ -d "$FOLDER" ]; then
 fi
 mkdir $FOLDER
 mkdir "$FOLDER/schemas"
-cp -r schemas/gschemas.compiled $FOLDER/schemas/gschemas.compiled
+glib-compile-schemas schemas --targetdir="$FOLDER/schemas"
 cp -r src/* $FOLDER
 cp metadata.json $FOLDER

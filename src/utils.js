@@ -1,5 +1,4 @@
 const {Gio, GLib, Soup} = imports.gi;
-//const Mainloop = imports.mainloop;
 const ByteArray = imports.byteArray;
 const Lang = imports.lang;
 
@@ -75,7 +74,7 @@ var Utils = class
 			});
 		}
 		session.queue_message(request, (session, message) => {
-			if(message.status_code !== 200)
+			if(message.status_code >= 400)
 				return callback(null, message);
 			callback(request.response_body.data, message);
 		});
@@ -84,17 +83,15 @@ var Utils = class
 	static downloadFile(uri, callback)
 	{
 	    const session = new Soup.SessionAsync();
-	    const file = Gio.File.new_for_path('/tmp/' + uri.split('/').pop());
+		const file = Gio.File.new_for_path(GLib.get_tmp_dir() + '/' + uri.split('/').pop());
 	    if(!file.query_exists(null)) file.create(Gio.FileCreateFlags.NONE, null);
 	    const fstream = file.replace(null, false, Gio.FileCreateFlags.NONE, null);
 	    const request = Soup.Message.new('GET', uri);
-	    request.connect('got_headers', message => {
-            if(message.status_code !== 200) throw new Error('Not Found');
-        });
         request.connect('got_chunk', (message, chunk) => {
-            fstream.write(chunk.get_data(), null);
+            if(message.status_code < 400) fstream.write(chunk.get_data(), null);
         });
         session.queue_message(request, (session, message) => {
+            if(message.status_code >= 400) throw new Error('Not Found');
             callback(file);
         });
 	}
@@ -115,14 +112,5 @@ var Utils = class
 		file.delete(null);
         return newFile;
 	}
-
-	/*static sleep(time, callback)
-	{
-		let timeout = Mainloop.timeout_add(time, () => {
-			callback();
-			return false;
-		}, null);
-		return timeout;
-	}*/
 
 }

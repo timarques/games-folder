@@ -2,7 +2,7 @@ const {Gio, GLib} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const {Utils} = Me.imports.utils;
 const {Game} = Me.imports.game;
-const {DirectoryMonitor} = Me.imports.directory_monitor;
+const {Monitor} = Me.imports.monitor;
 
 var Controller = class
 {
@@ -14,40 +14,55 @@ var Controller = class
         this.gamesSettings = data.gamesSettings;
         this.configurations = data.configurations;
         this.applicationsDirectory = data.applicationsDirectory;
-        this.iconsDirectory = data.iconsDirectory;
+        this.iconsDirectories = data.iconsDirectories;
         this.iconThemeDirectory = data.iconThemeDirectory;
         this.monitors = [];
+        this.refreshShortcutTimeout = null;
     }
 
     getGame(gameId)
     {
-    	return this.games.find(game => game.id === gameId);
+    	return this.games.find(game => game.id == gameId);
     }
 
     addGame(game)
     {
         if(!game) return null;
-        log('GamesFolder: Show game ' + game.id);
+        log('GamesFolder: Adding game '+ game.id +' from '+ game.collection);
         const currentGame = this.getGame(game.id);
         if(!currentGame){
-        	log('GamesFolder: Adding new game ' + game.id);
         	game.loadData(() => {
-        	    game.createIcon(this.iconsDirectory, this.iconThemeDirectory, () => {
+                if(this.getGame(game.id)) return null;
+        	    log('GamesFolder: Loading data ' + game.name);
+                log('GamesFolder: Creating icon ' + game.name);
+        	    game.createIcon({
+                    directories: this.iconsDirectories, 
+                    themeDirectory: this.iconThemeDirectory, 
+                    useThemeIcon: this.configurations.useThemeIcons
+                }, () => {
+        	        log('GamesFolder: Creating shortcut ' + game.name);
         	        game.createShortcut(this.applicationsDirectory);
+        	        log('GamesFolder: Insert new game ' + game.name);
         	        this.games.push(game);
 		            this.gamesSettings.addApp(
 			            this.applicationsDirectory.get_basename() + '-' +
 			            game.shortcut.get_basename()
-		            );
+                    );
+                    this.refreshShortcuts();
         	    });
         	});
-        }else if(currentGame.isHidden()) currentGame.show();
+        }else if(currentGame.isHidden()) {
+            log('GamesFolder: Showing game ' + currentGame.id);
+            currentGame.show();
+            this.refreshShortcuts();
+        }
     }
     
     removeGame(game)
     {
         log('GamesFolder: Hide game ' + game.id);
-    	this.getGame(game.id).hide();
+        this.getGame(game.id).hide();
+        this.refreshShortcuts();
     }
 
     injectModules(callback)
@@ -69,7 +84,7 @@ var Controller = class
             }
         }, ()=> {
         	this.configurations.modules = this.modules.map(module => {
-        		return module.constructor.name.toLowerCase()
+        		return module.constructor.name.toLowerCase();
         	});
         	callback();
     	});
@@ -79,14 +94,17 @@ var Controller = class
     {
         log('GamesFolder: Adding monitors to modules.');
         this.modules.forEach(module => {
-            const monitor = new DirectoryMonitor(module.directory);
+            const monitor = new Monitor(module.directory, 'directory');
             monitor.connect((file, eventType) => {
+                let operation = null;
                 log('GamesFolder: files have been changed');
-                module.find(file, game => {
-            		if(!game) return null;
-            		if(eventType === 2 || eventType === 10) this.removeGame(game);
-                	else if(eventType === 3 || eventType === 9) this.addGame(game);
-            	});
+                if(eventType === 2 || eventType === 10) operation = 'remove';
+                else if(eventType === 1 || eventType === 3 || eventType === 9) operation = 'add';
+                else return null;
+                const game = module.find(file);
+                if(!game) return null;
+                log('GamesFolder: Trying add game ' + game.id);
+                (this)[operation + 'Game'](game);
             });
             this.monitors.push(monitor);
         });
@@ -102,6 +120,7 @@ var Controller = class
     	log('GamesFolder: Synchronizing');
     	const loadGames = () => {
     	    log('GamesFolder: Loading games');
+    	    log('GamesFolder: '+ this.games.length + ' games loaded');
     		this.modules.forEach(module => module.findAll(game => this.addGame(game)));
     	};
     	const apps = this.gamesSettings.apps;
@@ -112,19 +131,38 @@ var Controller = class
     		this.configurations.directories.forEach(directory => {
     			const file = Gio.File.new_for_path(directory + '/' + shortcutPath);
     			if(file.query_exists(null)) shortcutFile = file;
-    		});
-    		if(!shortcutFile) return this.gamesSettings.removeApp(app);
+            });
+            if(!shortcutFile) return this.gamesSettings.removeApp(app);
+            const shortcutName = shortcutFile.get_basename();
+            const shortcutNameSplit = shortcutName.split('_');
+    		if(
+                !shortcutName.includes('gf') ||
+                shortcutNameSplit.length !== 3 ||
+                !this.configurations.modules.find(module => module === shortcutNameSplit[1])
+            ) return this.gamesSettings.removeApp(app);
     		try{
-			    return Game.initWithShortcutFile(shortcutFile, game => {
+			    Game.initWithShortcutFile(shortcutFile, game => {
 				    this.games.push(game);
 				    if(index === array.length - 1) loadGames();
 			    });
 			}catch(error){
 			    log('GamesFolder: ' + error);
 			    this.gamesSettings.removeApp(app);
+			    if(index === array.length - 1) loadGames();
 			}
-			if(index === array.length - 1) loadGames();
     	});
+    }
+
+    refreshShortcuts()
+    {
+        if(this.refreshShortcutTimeout) GLib.Source.remove(this.refreshShortcutTimeout);
+        this.refreshShortcutTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 3, ()=>{
+            log('GamesFolder: Refreshing menu shortcuts');
+            GLib.spawn_command_line_sync(
+                'update-desktop-database -q '+ GLib.get_user_data_dir() +'/applications'
+            );
+            return false;
+        });
     }
 
 }
