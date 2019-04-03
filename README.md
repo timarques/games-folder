@@ -4,11 +4,11 @@ This extension group all your games from Steam and Lutris in a GNOME Shell menu 
 
 ### Prerequisites
 
-This extension needs some dependencies to full work.
+You need install this dependencies to make all features work.
 
 ```
-Gda
-ImageMagick
+gda
+imagemagick
 ```
 
 ### Installing
@@ -25,5 +25,5 @@ Configuration is made through GSettings.
 
 ## License
 
-This project is licensed under the GPLv 3 License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the GPLv 3 License - see the [LICENSE.md](LICENSE) file for details
 
