@@ -99,12 +99,9 @@ var Controller = class
                 let operation = null;
                 log('GamesFolder: files have been changed');
                 if(eventType === 2 || eventType === 10) operation = 'remove';
-                else if(eventType === 1 || eventType === 3 || eventType === 9) operation = 'add';
+                else if(eventType=== 1 || eventType === 3) operation = 'add';
                 else return null;
-                const game = module.find(file);
-                if(!game) return null;
-                log('GamesFolder: Trying add game ' + game.id);
-                (this)[operation + 'Game'](game);
+                (this)[operation + 'Game'](module.find(file));
             });
             this.monitors.push(monitor);
         });
